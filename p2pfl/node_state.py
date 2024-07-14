@@ -7,7 +7,7 @@ class NodeState:
     Class to store the main state of a learning node.
     """
 
-    def __init__(self, addr):
+    def __init__(self, addr, simulation=False):
         self.addr = addr
         self.status = "Idle"
         self.actual_exp_name = None
@@ -19,7 +19,7 @@ class NodeState:
         """
 
         # Simulation
-        self.simulation = False
+        self.simulation = simulation
 
         # Learning
         self.learner = None

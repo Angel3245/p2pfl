@@ -1,5 +1,5 @@
 import time
-from typing import Any, List, Union
+from typing import Any, List, Type, Union
 
 from p2pfl.commands.init_model_command import InitModelCommand
 from p2pfl.communication.communication_protocol import CommunicationProtocol
@@ -8,6 +8,7 @@ from p2pfl.learning.learner import NodeLearner
 from p2pfl.management.logger import logger
 from p2pfl.node_state import NodeState
 from p2pfl.settings import Settings
+from p2pfl.simulation.virtual_learner import VirtualNodeLearner
 from p2pfl.stages.stage import Stage
 from p2pfl.stages.stage_factory import StageFactory
 
@@ -45,7 +46,7 @@ class StartLearningStage(Stage):
             # Init
             state.set_experiment("experiment", rounds)
             logger.experiment_started(state.addr)
-            state.learner = learner_class(model, data, state.addr, epochs)
+            state.learner = learner_class(model, data, state.addr, epochs) if not state.simulation else VirtualNodeLearner(learner_class, model, data, state.addr, epochs) # In simulation use a Virtual Learner
             state.start_thread_lock.release()
             begin = time.time()
 

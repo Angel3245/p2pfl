@@ -62,6 +62,7 @@ class Node:
         learner: Type[NodeLearner] = LightningLearner,
         aggregator: Type[Aggregator] = FedAvg,
         protocol: Type[CommunicationProtocol] = GrpcCommunicationProtocol,
+        simulation: bool = False,
         **kwargs,
     ) -> None:
         # Communication protol
@@ -78,7 +79,10 @@ class Node:
 
         # State
         self.__running = False
-        self.state = NodeState(self.addr)
+        self.state = NodeState(
+            self.addr,
+            simulation=simulation
+        )
 
         # Workflow
         self.learning_workflow = LearningWorkflow()

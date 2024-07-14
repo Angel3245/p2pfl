@@ -21,6 +21,7 @@ import datetime
 import logging
 import multiprocessing
 import os
+import ray
 from logging.handlers import QueueHandler, QueueListener
 from typing import Dict, List, Optional, Tuple
 
@@ -93,6 +94,19 @@ class ColoredFormatter(logging.Formatter):
         elif record.levelname == "ERROR" or record.levelname == "CRITICAL":
             record.levelname = RED + record.levelname + RESET
         return super().format(record)
+
+
+###################
+#    Ray Actor    #
+###################
+
+@ray.remote
+class LoggerActor:
+    def __init__(self, p2pfl_web_services: Optional[P2pflWebServices] = None) -> None:
+        self.logger = Logger(p2pfl_web_services)
+
+    def get_logger(self) -> "Logger":
+        return self.logger
 
 
 ################
@@ -204,7 +218,18 @@ class Logger:
             logging.Logger: The logger instance.
         """
         if Logger.__instance is None:
-            Logger.__instance = Logger()
+            if ray.is_initialized():  # Check if Ray is initialized
+                try:
+                    # The following needs to be in two separate lines to avoid a Ray bug (#7815)
+                    actor_handle = ray.get_actor("logger_actor")
+                    Logger.__instance = ray.get(actor_handle.get_logger.remote())
+                except ValueError:
+                    # Actor not found, create it
+                    actor_handle = LoggerActor.options(name="logger_actor").remote()
+                    Logger.__instance = ray.get(actor_handle.get_logger.remote())
+            else:
+                Logger.__instance = Logger()
+            
         return Logger.__instance
 
     ######
